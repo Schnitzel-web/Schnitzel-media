@@ -1,526 +1,340 @@
-import React, { useState } from 'react';
-import { 
-  Search, 
-  Menu, 
-  User, 
-  X, 
-  Home, 
-  FileText, 
-  Video, 
-  PlusCircle, 
-  ShieldCheck, 
-  Lock,
-  Users,
-  Save,
-  Trees,
-  Leaf,
-  Sprout,
-  Bird,
-  Axe,
-  Flame,
-  Youtube,
-  Home as Birdhouse
-} from 'lucide-react';
+!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Het YouTube Bos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.473.0/dist/umd/lucide.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #061209;
+        }
 
-const App = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState('home'); 
-  const [selectedArticle, setSelectedArticle] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  
-  // Admin & Auth State
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authCode, setAuthCode] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [adminTab, setAdminTab] = useState('artikelen'); 
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0a2411;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #143d1f;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #4ade80;
+        }
 
-  // Categorieën voor YouTube content
-  const availableCategories = ["Gamen", "Vlogs", "Mijlpalen", "Comedie"];
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-  // Artikelen data
-  const [articles, setArticles] = useState([
-    {
-      id: 1,
-      title: "Nieuwe Minecraft Update: Wat we tot nu toe weten",
-      excerpt: "De nieuwste snapshots laten zien dat de wereldgeneratie compleet op de schop gaat. Knagers zijn enthousiast.",
-      content: "De community kijkt al maanden uit naar deze update. Met de toevoeging van nieuwe biomen en geavanceerde redstone mogelijkheden lijkt 2026 een topjaar te worden voor Minecraft liefhebbers.",
-      author: "Schnitzel",
-      date: "13 jan 2026",
-      category: "Gamen",
-      readTime: "4 min"
-    },
-    {
-      id: 2,
-      title: "Mijlpaal: 100 abonnees voor CtrlAltKaas!",
-      excerpt: "Een historisch moment voor het kanaal terwijl de teller de magische grens van 100 passeert.",
-      content: "Na maanden van hard werken en dagelijkse uploads is het eindelijk zover. CtrlAltKaas viert zijn 100ste abonnee met een speciale livestream en een blik achter de schermen.",
-      author: "Woudloper",
-      date: "12 jan 2026",
-      category: "Mijlpalen",
-      readTime: "3 min"
-    }
-  ]);
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-  // Formulier state
-  const [newArticle, setNewArticle] = useState({
-    title: '',
-    excerpt: '',
-    content: '',
-    category: 'Gamen',
-    author: 'Boswachter'
-  });
+        // Verbeterde Icon component die werkt met de Lucide CDN
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const iconRef = useRef(null);
 
-  // Lijst met Bos-bewoners (Creators)
-  const [creators, setCreators] = useState([
-    { id: 1, name: "Schnitzel", subs: "75", role: "Opper-Eekhoorn", channelUrl: "https://www.youtube.com/@SCHNITZ-YT" },
-    { id: 2, name: "CtrlAltKaas", subs: "103", role: "Grote Wijze Boom", channelUrl: "https://www.youtube.com/@CtrlAltKaas" }
-  ]);
+            useEffect(() => {
+                if (window.lucide && iconRef.current) {
+                    // Lucide icons in de browser gebruiken de data-lucide attribute
+                    window.lucide.createIcons({
+                        attrs: {
+                            class: className,
+                            width: size,
+                            height: size,
+                            'stroke-width': 2
+                        },
+                        nameAttr: 'data-lucide',
+                        icons: window.lucide.icons
+                    });
+                }
+            }, [name, size, className]);
 
-  const handleAuth = () => {
-    if (authCode === 'Daan220413') {
-      setIsAdmin(true);
-      setShowAuthModal(false);
-      setAuthCode('');
-      setAuthError('');
-    } else {
-      setAuthError('De geheime woud-code is onjuist.');
-    }
-  };
+            return <i data-lucide={name.toLowerCase()} ref={iconRef} className={className} style={{ width: size, height: size, display: 'inline-block' }}></i>;
+        };
 
-  const handleAddArticle = (e) => {
-    e.preventDefault();
-    const articleToAdd = {
-      ...newArticle,
-      id: Date.now(),
-      date: new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }),
-      readTime: '5 min'
-    };
-    setArticles([articleToAdd, ...articles]);
-    setNewArticle({ title: '', excerpt: '', content: '', category: 'Gamen', author: 'Boswachter' });
-    setCurrentPage('artikelen');
-  };
-
-  const handleUpdateSubs = (id, newSubs) => {
-    setCreators(creators.map(c => c.id === id ? { ...c, subs: newSubs } : c));
-  };
-
-  const filteredArticles = articles.filter(art => 
-    art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    art.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  return (
-    <div className="flex flex-col h-screen bg-[#061209] text-[#dcfce7] font-sans overflow-hidden">
-      {/* Bos-Navbar */}
-      <nav className="flex justify-between items-center px-6 py-4 border-b border-[#143d1f] bg-[#0a2411] z-50">
-        <div className="flex items-center gap-6">
-          <button 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 hover:bg-[#143d1f] rounded-full transition-colors text-[#4ade80]"
-          >
-            <Menu size={24} />
-          </button>
-          <div className="flex flex-col leading-none cursor-pointer group" onClick={() => setCurrentPage('home')}>
-            <span className="text-2xl font-black tracking-tighter uppercase italic text-[#4ade80] group-hover:scale-105 transition-transform">Het YouTube Bos</span>
-            <span className="text-[10px] font-bold tracking-[0.2em] text-[#86a38f] ml-0.5 uppercase">Woud Nieuws</span>
-          </div>
-        </div>
-
-        <div className="flex items-center flex-1 max-w-xl px-8">
-          <div className="flex flex-1 items-center bg-[#051a0b] border border-[#143d1f] rounded-full px-4 py-2 focus-within:border-[#4ade80] transition-colors">
-            <Search size={18} className="text-[#3e6b45]" />
-            <input 
-              type="text" 
-              placeholder="Doorzoek het kreupelhout..." 
-              className="w-full bg-transparent px-3 outline-none text-sm placeholder-[#2d4d33] text-white"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          {isAdmin ? (
-            <div className="flex items-center gap-2 bg-[#4ade80]/10 text-[#4ade80] px-3 py-1.5 rounded-full border border-[#4ade80]/20 shadow-[0_0_15px_rgba(74,222,128,0.1)]">
-              <ShieldCheck size={18} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Boswachter Status</span>
-            </div>
-          ) : (
+        const NavItem = ({ iconName, label, isActive, onClick }) => (
             <button 
-              onClick={() => setShowAuthModal(true)}
-              className="p-2 hover:bg-[#143d1f] rounded-full transition-colors text-[#4ade80]"
+                onClick={onClick}
+                className={`flex items-center gap-4 px-5 py-4 rounded-2xl w-full transition-all mb-2 group relative overflow-hidden ${
+                    isActive ? 'bg-[#4ade80] text-[#061209] shadow-[0_10px_20px_rgba(74,222,128,0.2)]' : 'text-[#5a7a64] hover:bg-[#143d1f] hover:text-[#4ade80]'
+                }`}
             >
-              <User size={24} />
-            </button>
-          )}
-        </div>
-      </nav>
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        {isSidebarOpen && (
-          <aside className="w-64 bg-[#0a2411] border-r border-[#143d1f] flex-shrink-0 overflow-y-auto px-4 py-6 hidden lg:flex flex-col">
-            <div className="space-y-1 flex-1">
-              <NavItem 
-                icon={<Birdhouse size={18} />} 
-                label="Vogelhuisje" 
-                isActive={currentPage === 'home'}
-                onClick={() => setCurrentPage('home')}
-              />
-              <NavItem 
-                icon={<FileText size={18} />} 
-                label="Woudnieuws" 
-                isActive={currentPage === 'artikelen'}
-                onClick={() => setCurrentPage('artikelen')}
-              />
-              <NavItem 
-                icon={<Video size={18} />} 
-                label="Boswachters" 
-                isActive={currentPage === 'youtubers'}
-                onClick={() => setCurrentPage('youtubers')}
-              />
-              {isAdmin && (
-                <NavItem 
-                  icon={<Axe size={18} className="text-[#4ade80]" />} 
-                  label="Bosbeheer" 
-                  isActive={currentPage === 'admin'}
-                  onClick={() => setCurrentPage('admin')}
-                />
-              )}
-            </div>
-
-            {/* Sidebar Footer - Colofon */}
-            <div className="mt-auto pt-6 border-t border-[#143d1f] px-3 pb-4">
-              <p className="text-[10px] leading-relaxed font-bold text-[#3e6b45] uppercase tracking-wider">
-                Het Youtube Bos is ontworpen door <span className="text-[#4ade80]">Schnitzel</span> en wordt beheert door <span className="text-[#4ade80]">Schnitzel</span> en <span className="text-[#4ade80]">CtrlAltKaas</span>.
-              </p>
-            </div>
-          </aside>
-        )}
-
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-10 bg-[#061209] relative">
-          {/* Decoratieve Bos Elementen */}
-          <div className="absolute top-0 right-0 p-20 opacity-5 pointer-events-none text-[#4ade80]">
-            <Trees size={400} />
-          </div>
-          <div className="absolute bottom-10 left-10 opacity-10 pointer-events-none text-[#4ade80]">
-            <Sprout size={150} />
-          </div>
-
-          <div className="max-w-4xl mx-auto relative z-10">
-            
-            {/* HOME PAGINA - Vogelhuisje */}
-            {currentPage === 'home' && (
-              <div className="animate-in fade-in zoom-in-95 duration-1000">
-                <div className="py-20 md:py-32 flex flex-col items-center text-center">
-                  <div className="mb-6 p-4 bg-[#4ade80]/10 rounded-full animate-pulse">
-                    <Bird size={48} className="text-[#4ade80]" />
-                  </div>
-                  <h1 className="text-7xl md:text-9xl font-black tracking-tighter uppercase italic text-white mb-4 drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
-                    Het YouTube <span className="text-[#4ade80]">Bos</span>
-                  </h1>
-                  <p className="text-xl md:text-2xl font-bold text-[#86a38f] tracking-wide uppercase">
-                    Nieuws voor de nieuwsgierige knagers
-                  </p>
-                  <div className="mt-12 flex flex-wrap justify-center gap-4">
-                    <button 
-                      onClick={() => setCurrentPage('artikelen')}
-                      className="group px-8 py-3 bg-[#4ade80] text-[#061209] font-black uppercase text-sm rounded-full hover:bg-white transition-all shadow-[0_0_30px_rgba(74,222,128,0.3)] flex items-center gap-2"
-                    >
-                      <Leaf size={18} className="group-hover:rotate-12 transition-transform" /> Blader door nieuws
-                    </button>
-                    <button 
-                      onClick={() => setCurrentPage('youtubers')}
-                      className="px-8 py-3 border-2 border-[#143d1f] text-[#4ade80] font-black uppercase text-sm rounded-full hover:bg-[#143d1f] transition-all"
-                    >
-                      Zoek de boswachters
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ARTIKELEN PAGINA - Woudnieuws */}
-            {currentPage === 'artikelen' && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h1 className="text-4xl font-black text-white mb-8 border-b border-[#143d1f] pb-4 flex items-center gap-3">
-                  <FileText className="text-[#4ade80]" /> Verse Berichten
-                </h1>
-                <div className="space-y-6">
-                  {filteredArticles.length > 0 ? (
-                    filteredArticles.map((article) => (
-                      <div 
-                        key={article.id} 
-                        onClick={() => setSelectedArticle(article)}
-                        className="group flex flex-col p-8 bg-[#0a2411]/40 border border-[#143d1f] cursor-pointer hover:border-[#4ade80] hover:bg-[#0a2411] transition-all rounded-3xl relative overflow-hidden"
-                      >
-                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-20 transition-opacity">
-                          <Trees size={60} />
-                        </div>
-                        <div className="flex items-center gap-3 mb-4">
-                          <span className="bg-[#4ade80]/20 text-[#4ade80] text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-[#4ade80]/30">{article.category}</span>
-                          <span className="text-[#5a7a64] text-[10px] font-bold uppercase tracking-widest italic">{article.readTime} snaveltijd</span>
-                        </div>
-                        <h2 className="text-2xl md:text-3xl font-bold text-white group-hover:text-[#4ade80] transition-colors mb-3 leading-tight">{article.title}</h2>
-                        <p className="text-[#a8c4b0] text-sm md:text-base leading-relaxed mb-6 line-clamp-2">{article.excerpt}</p>
-                        <div className="flex items-center gap-2 text-[11px] font-bold text-[#3e6b45] uppercase tracking-tighter">
-                          <Sprout size={14} /> {article.author} • {article.date}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-24 bg-[#0a2411]/20 rounded-3xl border border-dashed border-[#143d1f]">
-                      <Search size={48} className="mx-auto text-[#143d1f] mb-4" />
-                      <p className="text-[#3e6b45] font-black uppercase">Er ritselt niets in deze struiken...</p>
+                <Icon name={iconName} size={18} className={isActive ? 'text-[#061209]' : 'text-[#3e6b45] group-hover:text-[#4ade80]'} />
+                <span className="text-sm tracking-wide font-black uppercase">{label}</span>
+                {isActive && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
+                        <Icon name="Sprout" size={16} />
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ADMIN PAGINA - Bosbeheer */}
-            {currentPage === 'admin' && isAdmin && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex items-center justify-between mb-8">
-                  <h1 className="text-4xl font-black text-white">Bosbeheer</h1>
-                  <div className="flex bg-[#051a0b] p-1 rounded-xl border border-[#143d1f]">
-                    <button 
-                      onClick={() => setAdminTab('artikelen')}
-                      className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${adminTab === 'artikelen' ? 'bg-[#4ade80] text-[#061209]' : 'text-[#3e6b45] hover:text-white'}`}
-                    >
-                      Plant Bericht
-                    </button>
-                    <button 
-                      onClick={() => setAdminTab('creators')}
-                      className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${adminTab === 'creators' ? 'bg-[#4ade80] text-[#061209]' : 'text-[#3e6b45] hover:text-white'}`}
-                    >
-                      Boswachters
-                    </button>
-                  </div>
-                </div>
-
-                {adminTab === 'artikelen' ? (
-                  <form onSubmit={handleAddArticle} className="space-y-6 bg-[#0a2411] p-8 rounded-3xl border border-[#143d1f] shadow-2xl">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-[#3e6b45] uppercase tracking-widest">Kop van de boom (Titel)</label>
-                        <input 
-                          required
-                          className="w-full bg-[#051a0b] border border-[#143d1f] rounded-xl px-4 py-3 outline-none focus:border-[#4ade80] transition-colors text-white"
-                          value={newArticle.title}
-                          onChange={(e) => setNewArticle({...newArticle, title: e.target.value})}
-                          placeholder="Bijv. De grote nootroof..."
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-[#3e6b45] uppercase tracking-widest">Kies een Tak (Categorie)</label>
-                        <select 
-                          className="w-full bg-[#051a0b] border border-[#143d1f] rounded-xl px-4 py-3 outline-none focus:border-[#4ade80] transition-colors text-white appearance-none cursor-pointer"
-                          value={newArticle.category}
-                          onChange={(e) => setNewArticle({...newArticle, category: e.target.value})}
-                        >
-                          {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-[#3e6b45] uppercase tracking-widest">Korte geurspoor (excerpt)</label>
-                      <input 
-                        required
-                        className="w-full bg-[#051a0b] border border-[#143d1f] rounded-xl px-4 py-3 outline-none focus:border-[#4ade80] transition-colors text-white"
-                        value={newArticle.excerpt}
-                        onChange={(e) => setNewArticle({...newArticle, excerpt: e.target.value})}
-                        placeholder="In een paar woorden..."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-[#3e6b45] uppercase tracking-widest">Volledig verhaal</label>
-                      <textarea 
-                        required
-                        className="w-full bg-[#051a0b] border border-[#143d1f] rounded-xl px-4 py-3 outline-none focus:border-[#4ade80] transition-colors h-48 text-white"
-                        value={newArticle.content}
-                        onChange={(e) => setNewArticle({...newArticle, content: e.target.value})}
-                        placeholder="Schrijf hier alles op..."
-                      />
-                    </div>
-                    <button 
-                      type="submit"
-                      className="w-full bg-[#4ade80] text-[#061209] font-black uppercase py-4 rounded-xl hover:bg-white hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all tracking-widest flex items-center justify-center gap-2"
-                    >
-                      <Sprout size={18} /> Plant dit artikel
-                    </button>
-                  </form>
-                ) : (
-                  <div className="bg-[#0a2411] rounded-3xl border border-[#143d1f] overflow-hidden">
-                    <div className="p-6 border-b border-[#143d1f]">
-                      <h2 className="text-sm font-black uppercase tracking-widest text-[#3e6b45]">Nest-beheer</h2>
-                    </div>
-                    <div className="divide-y divide-[#143d1f]">
-                      {creators.map(creator => (
-                        <div key={creator.id} className="p-6 flex items-center justify-between group hover:bg-[#051a0b] transition-colors">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-[#4ade80]/10 rounded-2xl flex items-center justify-center text-[#4ade80] font-black border border-[#4ade80]/20">
-                              {creator.name.charAt(0)}
-                            </div>
-                            <div>
-                              <div className="font-bold text-white text-lg">{creator.name}</div>
-                              <div className="text-[10px] font-black text-[#3e6b45] uppercase tracking-widest">{creator.role}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <input 
-                              type="number"
-                              className="w-24 bg-[#051a0b] border border-[#143d1f] rounded-lg px-3 py-1.5 outline-none focus:border-[#4ade80] text-sm font-bold text-white transition-all"
-                              value={creator.subs}
-                              onChange={(e) => handleUpdateSubs(creator.id, e.target.value)}
-                            />
-                            <Save size={18} className="text-[#4ade80] opacity-50 group-focus-within:opacity-100 cursor-pointer" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 )}
-              </div>
-            )}
+            </button>
+        );
 
-            {/* YOUTUBERS PAGINA - De Boswachters */}
-            {currentPage === 'youtubers' && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h1 className="text-4xl font-black text-white mb-8 flex items-center gap-3">
-                  <ShieldCheck className="text-[#4ade80]" /> Bekende Boswachters
-                </h1>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {creators.map((youtuber) => (
-                    <div key={youtuber.id} className="bg-[#0a2411] p-8 rounded-[2.5rem] border border-[#143d1f] hover:border-[#4ade80] transition-all cursor-pointer group shadow-xl relative overflow-hidden flex flex-col">
-                       <div className="absolute -right-4 -top-4 text-[#143d1f] group-hover:text-[#4ade80]/10 transition-colors">
-                        <Trees size={120} />
-                      </div>
-                      <div className="flex justify-between items-start mb-6 relative z-10">
-                        <h3 className="font-black text-3xl text-white group-hover:text-[#4ade80] transition-colors uppercase italic tracking-tighter">{youtuber.name}</h3>
-                        <span className="bg-[#4ade80]/10 text-[#4ade80] text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border border-[#4ade80]/20">
-                          {youtuber.role}
-                        </span>
-                      </div>
-                      <div className="flex items-end justify-between border-t border-[#143d1f] py-6 relative z-10">
-                        <div className="flex flex-col">
-                          <span className="text-4xl font-black text-white group-hover:scale-105 transition-transform origin-left">{youtuber.subs}</span>
-                          <span className="text-[10px] text-[#3e6b45] font-bold uppercase tracking-widest">Aanhangers</span>
+        const App = () => {
+            const [searchQuery, setSearchQuery] = useState('');
+            const [currentPage, setCurrentPage] = useState('home'); 
+            const [selectedArticle, setSelectedArticle] = useState(null);
+            const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+            
+            const [isAdmin, setIsAdmin] = useState(false);
+            const [showAuthModal, setShowAuthModal] = useState(false);
+            const [authCode, setAuthCode] = useState('');
+            const [authError, setAuthError] = useState('');
+
+            const [articles, setArticles] = useState([
+                {
+                    id: 1,
+                    title: "Nieuwe Minecraft Update: Wat we tot nu toe weten",
+                    excerpt: "De nieuwste snapshots laten zien dat de wereldgeneratie compleet op de schop gaat. Knagers zijn enthousiast.",
+                    content: "De community kijkt al maanden uit naar deze update. Met de toevoeging van nieuwe biomen en geavanceerde redstone mogelijkheden lijkt 2026 een topjaar te worden voor Minecraft liefhebbers.",
+                    author: "Schnitzel",
+                    date: "13 jan 2026",
+                    category: "Gamen",
+                    readTime: "4 min"
+                },
+                {
+                    id: 2,
+                    title: "Mijlpaal: 100 abonnees voor CtrlAltKaas!",
+                    excerpt: "Een historisch moment voor het kanaal terwijl de teller de magische grens van 100 passeert.",
+                    content: "Na maanden van hard werken en dagelijkse uploads is het eindelijk zover. CtrlAltKaas viert zijn 100ste abonnee met een speciale livestream en een blik achter de schermen.",
+                    author: "Woudloper",
+                    date: "12 jan 2026",
+                    category: "Mijlpalen",
+                    readTime: "3 min"
+                }
+            ]);
+
+            const [newArticle, setNewArticle] = useState({
+                title: '', excerpt: '', content: '', category: 'Gamen', author: 'Boswachter'
+            });
+
+            const [creators, setCreators] = useState([
+                { id: 1, name: "Schnitzel", subs: "75", role: "Opper-Eekhoorn", channelUrl: "https://www.youtube.com/@SCHNITZ-YT" },
+                { id: 2, name: "CtrlAltKaas", subs: "103", role: "Grote Wijze Boom", channelUrl: "https://www.youtube.com/@CtrlAltKaas" }
+            ]);
+
+            const handleAuth = () => {
+                if (authCode === 'Daan220413') {
+                    setIsAdmin(true);
+                    setShowAuthModal(false);
+                    setAuthCode('');
+                    setAuthError('');
+                } else {
+                    setAuthError('De geheime woud-code is onjuist.');
+                }
+            };
+
+            const handleAddArticle = (e) => {
+                e.preventDefault();
+                const articleToAdd = {
+                    ...newArticle,
+                    id: Date.now(),
+                    date: new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }),
+                    readTime: '5 min'
+                };
+                setArticles([articleToAdd, ...articles]);
+                setNewArticle({ title: '', excerpt: '', content: '', category: 'Gamen', author: 'Boswachter' });
+                setCurrentPage('artikelen');
+            };
+
+            const filteredArticles = articles.filter(art => 
+                art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                art.category.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+
+            return (
+                <div className="flex flex-col h-screen text-[#dcfce7] overflow-hidden">
+                    {/* Navbar */}
+                    <nav className="flex justify-between items-center px-6 py-4 border-b border-[#143d1f] bg-[#0a2411] z-50">
+                        <div className="flex items-center gap-6">
+                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-[#143d1f] rounded-full transition-colors text-[#4ade80] flex items-center justify-center">
+                                <Icon name="Menu" />
+                            </button>
+                            <div className="flex flex-col leading-none cursor-pointer group" onClick={() => setCurrentPage('home')}>
+                                <span className="text-2xl font-black tracking-tighter uppercase italic text-[#4ade80] group-hover:scale-105 transition-transform">Het YouTube Bos</span>
+                                <span className="text-[10px] font-bold tracking-[0.2em] text-[#86a38f] ml-0.5 uppercase">Woud Nieuws</span>
+                            </div>
                         </div>
-                        <Users size={32} className="text-[#143d1f] group-hover:text-[#4ade80] transition-colors" />
-                      </div>
-                      
-                      {/* YouTube Kanaal Knop */}
-                      <a 
-                        href={youtuber.channelUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-4 w-full bg-[#143d1f] hover:bg-red-600 text-white py-3 rounded-2xl flex items-center justify-center gap-2 transition-all font-black uppercase tracking-widest text-[10px] z-20 group/btn"
-                      >
-                        <Youtube size={18} className="text-[#4ade80] group-hover/btn:text-white transition-colors" /> Naar Kanaal
-                      </a>
+
+                        <div className="flex items-center flex-1 max-w-xl px-8">
+                            <div className="flex flex-1 items-center bg-[#051a0b] border border-[#143d1f] rounded-full px-4 py-2 focus-within:border-[#4ade80] transition-colors">
+                                <Icon name="Search" size={18} className="text-[#3e6b45]" />
+                                <input 
+                                    type="text" 
+                                    placeholder="Doorzoek het kreupelhout..." 
+                                    className="w-full bg-transparent px-3 outline-none text-sm placeholder-[#2d4d33] text-white"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            {isAdmin ? (
+                                <div className="flex items-center gap-2 bg-[#4ade80]/10 text-[#4ade80] px-3 py-1.5 rounded-full border border-[#4ade80]/20">
+                                    <Icon name="ShieldCheck" size={18} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Boswachter Status</span>
+                                </div>
+                            ) : (
+                                <button onClick={() => setShowAuthModal(true)} className="p-2 hover:bg-[#143d1f] rounded-full transition-colors text-[#4ade80] flex items-center justify-center">
+                                    <Icon name="User" />
+                                </button>
+                            )}
+                        </div>
+                    </nav>
+
+                    <div className="flex flex-1 overflow-hidden">
+                        {/* Sidebar */}
+                        {isSidebarOpen && (
+                            <aside className="w-64 bg-[#0a2411] border-r border-[#143d1f] flex-shrink-0 overflow-y-auto px-4 py-6 hidden lg:flex flex-col custom-scrollbar">
+                                <div className="space-y-1 flex-1">
+                                    <NavItem iconName="Home" label="Vogelhuisje" isActive={currentPage === 'home'} onClick={() => setCurrentPage('home')} />
+                                    <NavItem iconName="FileText" label="Woudnieuws" isActive={currentPage === 'artikelen'} onClick={() => setCurrentPage('artikelen')} />
+                                    <NavItem iconName="Video" label="Boswachters" isActive={currentPage === 'youtubers'} onClick={() => setCurrentPage('youtubers')} />
+                                    {isAdmin && <NavItem iconName="Axe" label="Bosbeheer" isActive={currentPage === 'admin'} onClick={() => setCurrentPage('admin')} />}
+                                </div>
+                                <div className="mt-auto pt-6 border-t border-[#143d1f] px-3 pb-4">
+                                    <p className="text-[10px] leading-relaxed font-bold text-[#3e6b45] uppercase tracking-wider">
+                                        Ontworpen door <span className="text-[#4ade80]">Schnitzel</span>, beheerd door <span className="text-[#4ade80]">Schnitzel</span> & <span className="text-[#4ade80]">CtrlAltKaas</span>.
+                                    </p>
+                                </div>
+                            </aside>
+                        )}
+
+                        {/* Main */}
+                        <main className="flex-1 overflow-y-auto p-6 md:p-10 bg-[#061209] relative custom-scrollbar">
+                            <div className="max-w-4xl mx-auto relative z-10 animate-fade-in">
+                                {currentPage === 'home' && (
+                                    <div className="py-20 flex flex-col items-center text-center">
+                                        <div className="mb-6 p-4 bg-[#4ade80]/10 rounded-full flex items-center justify-center">
+                                            <Icon name="Bird" size={48} className="text-[#4ade80]" />
+                                        </div>
+                                        <h1 className="text-7xl md:text-9xl font-black tracking-tighter uppercase italic text-white mb-4">
+                                            Het YouTube <span className="text-[#4ade80]">Bos</span>
+                                        </h1>
+                                        <p className="text-xl font-bold text-[#86a38f] uppercase">Nieuws voor de nieuwsgierige knagers</p>
+                                        <div className="mt-12 flex gap-4">
+                                            <button onClick={() => setCurrentPage('artikelen')} className="px-8 py-3 bg-[#4ade80] text-[#061209] font-black uppercase text-sm rounded-full">Blader door nieuws</button>
+                                            <button onClick={() => setCurrentPage('youtubers')} className="px-8 py-3 border-2 border-[#143d1f] text-[#4ade80] font-black uppercase text-sm rounded-full">Zoek de boswachters</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {currentPage === 'artikelen' && (
+                                    <div>
+                                        <h1 className="text-4xl font-black text-white mb-8 border-b border-[#143d1f] pb-4 flex items-center gap-3">
+                                            <Icon name="FileText" className="text-[#4ade80]" /> Verse Berichten
+                                        </h1>
+                                        <div className="space-y-6">
+                                            {filteredArticles.map(article => (
+                                                <div key={article.id} onClick={() => setSelectedArticle(article)} className="p-8 bg-[#0a2411]/40 border border-[#143d1f] cursor-pointer hover:border-[#4ade80] transition-all rounded-3xl">
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <span className="bg-[#4ade80]/20 text-[#4ade80] text-[10px] font-black px-3 py-1 rounded-full uppercase">{article.category}</span>
+                                                        <span className="text-[#5a7a64] text-[10px] font-bold uppercase">{article.readTime} snaveltijd</span>
+                                                    </div>
+                                                    <h2 className="text-2xl font-bold text-white mb-3">{article.title}</h2>
+                                                    <p className="text-[#a8c4b0] text-sm mb-6">{article.excerpt}</p>
+                                                    <div className="text-[11px] font-bold text-[#3e6b45] uppercase tracking-tighter flex items-center gap-2">
+                                                        <Icon name="Sprout" size={14} /> {article.author} • {article.date}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {currentPage === 'youtubers' && (
+                                    <div>
+                                        <h1 className="text-4xl font-black text-white mb-8">Bekende Boswachters</h1>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {creators.map(youtuber => (
+                                                <div key={youtuber.id} className="bg-[#0a2411] p-8 rounded-[2.5rem] border border-[#143d1f] hover:border-[#4ade80] transition-all group">
+                                                    <div className="flex justify-between mb-6">
+                                                        <h3 className="font-black text-3xl text-white uppercase italic">{youtuber.name}</h3>
+                                                        <span className="bg-[#4ade80]/10 text-[#4ade80] text-[10px] font-black px-4 py-1.5 rounded-full uppercase">{youtuber.role}</span>
+                                                    </div>
+                                                    <div className="flex items-end justify-between border-t border-[#143d1f] py-6">
+                                                        <div>
+                                                            <span className="text-4xl font-black text-white">{youtuber.subs}</span>
+                                                            <span className="block text-[10px] text-[#3e6b45] font-bold uppercase">Aanhangers</span>
+                                                        </div>
+                                                        <Icon name="Users" size={32} className="text-[#143d1f] group-hover:text-[#4ade80]" />
+                                                    </div>
+                                                    <a href={youtuber.channelUrl} target="_blank" className="mt-4 w-full bg-[#143d1f] hover:bg-red-600 text-white py-3 rounded-2xl flex items-center justify-center gap-2 font-black uppercase tracking-widest text-[10px]">
+                                                        <Icon name="Youtube" size={18} /> Naar Kanaal
+                                                    </a>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {currentPage === 'admin' && isAdmin && (
+                                    <div>
+                                        <h1 className="text-4xl font-black text-white mb-8">Bosbeheer</h1>
+                                        <form onSubmit={handleAddArticle} className="space-y-6 bg-[#0a2411] p-8 rounded-3xl border border-[#143d1f]">
+                                            <input className="w-full bg-[#051a0b] border border-[#143d1f] rounded-xl px-4 py-3 outline-none focus:border-[#4ade80] text-white" placeholder="Titel" value={newArticle.title} onChange={e => setNewArticle({...newArticle, title: e.target.value})} required />
+                                            <input className="w-full bg-[#051a0b] border border-[#143d1f] rounded-xl px-4 py-3 outline-none focus:border-[#4ade80] text-white" placeholder="Korte tekst" value={newArticle.excerpt} onChange={e => setNewArticle({...newArticle, excerpt: e.target.value})} required />
+                                            <textarea className="w-full bg-[#051a0b] border border-[#143d1f] rounded-xl px-4 py-3 outline-none focus:border-[#4ade80] text-white h-32" placeholder="Verhaal" value={newArticle.content} onChange={e => setNewArticle({...newArticle, content: e.target.value})} required />
+                                            <button type="submit" className="w-full bg-[#4ade80] text-[#061209] font-black uppercase py-4 rounded-xl">Plant artikel</button>
+                                        </form>
+                                    </div>
+                                )}
+                            </div>
+                        </main>
                     </div>
-                  ))}
+
+                    {/* Auth Modal */}
+                    {showAuthModal && (
+                        <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
+                            <div className="bg-[#0a2411] border border-[#143d1f] p-10 rounded-[3rem] w-full max-w-md">
+                                <h3 className="text-2xl font-black uppercase italic text-[#4ade80] mb-6 text-center">Wachters van het Woud</h3>
+                                <input type="password" placeholder="Geheime code..." className="w-full bg-[#051a0b] border border-[#143d1f] rounded-2xl py-5 px-6 mb-4 text-white" value={authCode} onChange={e => setAuthCode(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleAuth()} />
+                                {authError && <p className="text-red-400 text-xs font-bold mb-4">{authError}</p>}
+                                <div className="flex gap-2">
+                                    <button onClick={() => setShowAuthModal(false)} className="flex-1 bg-white/10 text-white font-black uppercase py-4 rounded-xl">Annuleer</button>
+                                    <button onClick={handleAuth} className="flex-1 bg-[#4ade80] text-[#061209] font-black uppercase py-4 rounded-xl">Word park wachter</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Detail Modal */}
+                    {selectedArticle && (
+                        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4">
+                            <div className="w-full max-w-4xl h-[90vh] bg-[#0a2411] rounded-[3rem] overflow-hidden border border-[#143d1f] flex flex-col relative">
+                                <button onClick={() => setSelectedArticle(null)} className="absolute top-8 right-8 text-[#4ade80] flex items-center justify-center"><Icon name="X" size={32} /></button>
+                                <div className="overflow-y-auto p-10 md:p-20 custom-scrollbar">
+                                    <span className="text-[#4ade80] font-black uppercase text-xs mb-8 block">{selectedArticle.category}</span>
+                                    <h1 className="text-5xl font-black text-white italic mb-12 leading-tight">{selectedArticle.title}</h1>
+                                    <p className="text-2xl text-[#d1d5db] border-l-8 border-[#4ade80] pl-10 mb-12 italic">"{selectedArticle.excerpt}"</p>
+                                    <div className="text-xl text-[#a8c4b0] leading-loose">{selectedArticle.content}</div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
-              </div>
-            )}
-          </div>
-        </main>
-      </div>
+            );
+        };
 
-      {/* Auth Modal - Boswachters Post */}
-      {showAuthModal && (
-        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0a2411] border border-[#143d1f] p-10 rounded-[3rem] w-full max-w-md shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-            <div className="flex justify-between items-center mb-8">
-              <div className="flex flex-col">
-                <h3 className="text-2xl font-black uppercase italic text-[#4ade80]">Wachters van het Woud</h3>
-                <span className="text-[10px] font-bold text-[#3e6b45] uppercase tracking-[0.2em]">Geef de geheime roep</span>
-              </div>
-              <button onClick={() => {setShowAuthModal(false); setAuthError('');}} className="text-[#3e6b45] hover:text-white transition-colors">
-                <X size={24} />
-              </button>
-            </div>
-            <div className="space-y-6">
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4ade80]" size={18} />
-                <input 
-                  type="password"
-                  className="w-full bg-[#051a0b] border border-[#143d1f] rounded-2xl py-5 pl-12 pr-4 outline-none focus:border-[#4ade80] transition-colors text-white shadow-inner"
-                  placeholder="Secret password..."
-                  value={authCode}
-                  onChange={(e) => setAuthCode(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAuth()}
-                />
-              </div>
-              {authError && (
-                <div className="flex items-center gap-2 text-[#4ade80] animate-bounce">
-                  <Leaf size={12} />
-                  <p className="text-[10px] font-black uppercase tracking-widest">{authError}</p>
-                </div>
-              )}
-              <button 
-                onClick={handleAuth}
-                className="w-full bg-[#4ade80] text-[#061209] font-black uppercase py-5 rounded-2xl hover:bg-white transition-all tracking-widest shadow-lg"
-              >
-                Word park wachter
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Detail Modal - De Grote Holle Boom */}
-      {selectedArticle && (
-        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4">
-          <div className="w-full max-w-4xl h-full max-h-[92vh] bg-[#0a2411] rounded-[3rem] overflow-hidden shadow-2xl relative flex flex-col border border-[#143d1f]">
-            <div className="flex items-center justify-between p-8 border-b border-[#143d1f]">
-              <div className="flex items-center gap-4 text-xs font-black uppercase tracking-[0.3em] text-[#3e6b45]">
-                <Leaf size={16} className="text-[#4ade80]" /> <span>Fluisteringen van het bos</span>
-              </div>
-              <button onClick={() => setSelectedArticle(null)} className="p-3 hover:bg-[#143d1f] rounded-full text-[#4ade80] transition-colors">
-                <X size={28} />
-              </button>
-            </div>
-            <div className="overflow-y-auto p-10 md:p-20">
-              <span className="text-[#4ade80] font-black uppercase text-xs tracking-[0.4em] mb-8 block">{selectedArticle.category}</span>
-              <h1 className="text-5xl md:text-7xl font-black mb-12 leading-[1] text-white italic drop-shadow-lg">{selectedArticle.title}</h1>
-              <div className="prose prose-invert max-w-none">
-                <p className="text-2xl text-[#d1d5db] leading-relaxed mb-12 border-l-8 border-[#4ade80] pl-10 py-4 bg-white/5 rounded-r-2xl italic">
-                  "{selectedArticle.excerpt}"
-                </p>
-                <div className="text-xl text-[#a8c4b0] leading-loose space-y-6">
-                  {selectedArticle.content}
-                </div>
-              </div>
-              <div className="mt-20 pt-10 border-t border-[#143d1f] flex items-center gap-4 text-[#3e6b45] font-black uppercase text-xs tracking-widest">
-                <Trees size={20} /> Geschreven door {selectedArticle.author} op {selectedArticle.date}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const NavItem = ({ icon, label, isActive, onClick }) => (
-  <button 
-    onClick={onClick}
-    className={`flex items-center gap-4 px-5 py-4 rounded-2xl w-full transition-all mb-2 group relative overflow-hidden ${
-      isActive ? 'bg-[#4ade80] text-[#061209] shadow-[0_10px_20px_rgba(74,222,128,0.2)]' : 'text-[#5a7a64] hover:bg-[#143d1f] hover:text-[#4ade80]'
-    }`}
-  >
-    <span className={`${isActive ? 'text-[#061209]' : 'text-[#3e6b45] group-hover:text-[#4ade80]'} transition-colors`}>{icon}</span>
-    <span className={`text-sm tracking-wide font-black uppercase ${isActive ? '' : ''}`}>{label}</span>
-    {isActive && (
-      <div className="absolute right-4 top-1/2 -translate-y-1/2">
-        <Sprout size={16} />
-      </div>
-    )}
-  </button>
-);
-
-export default App;
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
